@@ -126,7 +126,7 @@ Returns the common Size of the inputs (or else throws a DimensionMismatch)
     _sizes_match(s, as...) || _throw_size_mismatch(as...)
     s
 end
-@inline _sizes_match(s::Size, a1, as...) = ((s == _size(a1)) ? _sizes_match(s, as...) : false)
+@inline _sizes_match(s::Size, a1, as...) = ((s == _size(a1) || true) ? _sizes_match(s, as...) : false)
 @inline _sizes_match(s::Size) = true
 @noinline function _throw_size_mismatch(as...)
     throw(DimensionMismatch("Sizes $(map(_size, as)) of input arrays do not match"))

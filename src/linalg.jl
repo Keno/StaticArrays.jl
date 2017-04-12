@@ -82,9 +82,11 @@ end
     end
 end
 
-@inline vcat(a::Union{StaticVector,StaticMatrix}) = a
-@inline vcat(a::Union{StaticVector, StaticMatrix}, b::Union{StaticVector,StaticMatrix}) = _vcat(Size(a), Size(b), a, b)
-@generated function _vcat(::Size{Sa}, ::Size{Sb}, a::Union{StaticVector, StaticMatrix}, b::Union{StaticVector,StaticMatrix}) where {Sa, Sb}
+const TransposedStaticVector = RowVector{<:Any,<:StaticArray}
+const AnyStatic = Union{StaticVector, StaticMatrix, TransposedStaticVector}
+@inline vcat(a::AnyStatic) = a
+@inline vcat(a::AnyStatic, b::AnyStatic) = _vcat(Size(a), Size(b), a, b)
+@generated function _vcat(::Size{Sa}, ::Size{Sb}, a::AnyStatic, b::AnyStatic) where {Sa, Sb}
     if Size(Sa)[2] != Size(Sb)[2]
         throw(DimensionMismatch("Tried to vcat arrays of size $Sa and $Sb"))
     end
@@ -107,9 +109,9 @@ end
     end
 end
 # TODO make these more efficient
-@inline vcat(a::Union{StaticVector,StaticMatrix}, b::Union{StaticVector,StaticMatrix}, c::Union{StaticVector,StaticMatrix}) =
+@inline vcat(a::AnyStatic, b::AnyStatic, c::AnyStatic) =
     vcat(vcat(a,b), c)
-@inline vcat(a::Union{StaticVector,StaticMatrix}, b::Union{StaticVector,StaticMatrix}, c::Union{StaticVector,StaticMatrix}...) =
+@inline vcat(a::AnyStatic, b::AnyStatic, c::AnyStatic...) =
     vcat(vcat(a,b), c...)
 
 
@@ -227,14 +229,16 @@ end
         return zero(real(eltype(a)))
     end
 
-    expr = :(abs2(a[1]))
+    s = gensym()
+    exprs = Expr(:block, :($s = abs2(a[1])))
     for j = 2:prod(S)
-        expr = :($expr + abs2(a[$j]))
+        push!(exprs.args, :($s += abs2(a[$j])))
     end
 
     return quote
         $(Expr(:meta, :inline))
-        @inbounds return sqrt($expr)
+        $exprs
+        @inbounds return sqrt($s)
     end
 end
 

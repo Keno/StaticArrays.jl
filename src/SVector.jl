@@ -19,6 +19,10 @@ const SVector{S, T} = SArray{Tuple{S}, T, 1, S}
 @inline (::Type{SVector{S}}){S, T}(x::NTuple{S,T}) = SVector{S,T}(x)
 @inline (::Type{SVector{S}}){S, T <: Tuple}(x::T) = SVector{S,promote_tuple_eltype(T)}(x)
 
+size(::Type{RowVector{T,SV}}) where SV <: SVector{S} where {S,T} = (1,S)
+size(RT::Type{RowVector{T,SV}}, d) where {T, SV <: SVector} = size(RT)[d]
+
+
 # conversion from AbstractVector / AbstractArray (better inference than default)
 #@inline convert{S,T}(::Type{SVector{S}}, a::AbstractArray{T}) = SVector{S,T}((a...))
 
